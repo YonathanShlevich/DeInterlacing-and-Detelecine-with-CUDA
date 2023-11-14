@@ -1,18 +1,17 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "load_fields.h"
+
 
 int main() {
-
     //setting up variables
-    char inputFile[] = "0000.png";
-    int imageWidth, imageHeight, channels, info;
-    //unsigned int bufferSize = imageHeight * imageHeight * 3;
+    char *fileName = getFileName(67);
+    printf("File Name: %s\n", fileName);
+    free(fileName);
+    unsigned int clipLength = 690;
 
-    //loading png info
-    info = stbi_info(inputFile, &imageWidth, &imageHeight, &channels);
+    //struct video clip = loadFields(clipLength);
 
-
-    printf("Image Height: %d\n", imageHeight);
     return 0;
 }
 

@@ -8,15 +8,23 @@
 
 //produce the filename for a given frame
 char * getFileName(int frame) {
-    char *str;
-    strcpy(str, "frames/0000.png");
+    //length of filename
+    size_t length = 16 * sizeof(char);
+    //malloc output string
+    char *output = malloc(16*sizeof(char));
+    //base string
+    char str[] = "frames/0000.png";
+    //converting frame number to chars
     str[7] = ((frame / 1000) % 10) + '0';
     str[8] = ((frame / 100) % 10) + '0';
     str[9] = ((frame / 10) % 10) + '0';
     str[10] = ((frame / 1) % 10) + '0';
 
-    return str;
+    //string copy to output
+    strncpy(output, str, length);
+    return output;
 }
+
 struct video loadFields(unsigned int clipLength) {
     //setting up output struct
     struct video output;
