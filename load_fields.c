@@ -26,6 +26,7 @@ char * getFileName(int frame) {
 }
 
 struct field * loadFields(unsigned int clipLength) {
+    
     //checking video height, width, and channels per pixel
     int imageHeight, imageWidth, channels, info;
     info = stbi_info(getFileName(0), &imageWidth, &imageHeight, &channels);
@@ -39,20 +40,25 @@ struct field * loadFields(unsigned int clipLength) {
     for(int i = 0; i < clipLength * 2; i++) {
         output[i].pixelData = malloc(fieldSize);
     }
-
+    
     //iterating through each frame in the clip
     for (int frame = 0; frame < clipLength; frame++) {
         //load frame
         unsigned char *data = stbi_load(getFileName(frame), &imageWidth, &imageHeight, &channels, 0);
-        //iterating through image rows and cols
+        //iterating through image rows and cols for even field
         for(int row = 0; row < imageHeight; row += 2) {
             for(int col = 0; col < rowLength; col++) {
                 output[frame * 2].pixelData[((row / 2) * rowLength) + col] = data[(row * rowLength) + col];
             }
         }
+        //iterating through image rows and cols for odd field
+        for(int row = 1; row < imageHeight; row += 2) {
+            for(int col = 0; col < rowLength; col++) {
+                output[(frame * 2) + 1].pixelData[((row / 2) * rowLength) + col] = data[(row * rowLength) + col];
+            }
+        }
         //free temp memory
         free(data);
     }
-
     return output;
 }
