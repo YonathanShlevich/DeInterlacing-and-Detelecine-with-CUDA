@@ -11,7 +11,7 @@ char * getFileName(int frame) {
     //length of filename
     size_t length = 16 * sizeof(char);
     //malloc output string
-    char *output = malloc(16*sizeof(char));
+    char *output = (char *)malloc(16*sizeof(char));
     //base string
     char str[] = "frames/0000.png";
     //converting frame number to chars
@@ -25,26 +25,36 @@ char * getFileName(int frame) {
     return output;
 }
 
-struct field * loadFields(unsigned int clipLength) {
-    
+size_t getFieldSize() {
     //checking video height, width, and channels per pixel
     int imageHeight, imageWidth, channels, info;
     info = stbi_info(getFileName(0), &imageWidth, &imageHeight, &channels);
     
     //determining the size of the output
     size_t fieldSize = (imageHeight / 2) * imageWidth * channels * sizeof(char);
-    int rowLength = imageWidth * channels;
+
+    return fieldSize;
+}
+
+struct field * loadFields(unsigned int clipLength) {
+    
+    //checking video height, width, and channels per pixel
+    int imageHeight, imageWidth, channels, rowLength;
+    
+    //determining the size of the output
+    size_t fieldSize = getFieldSize();
 
     //setting up output
-    struct field *output = malloc(clipLength * 2 * fieldSize);
+    struct field *output = (struct field *)malloc(clipLength * 2 * fieldSize);
     for(int i = 0; i < clipLength * 2; i++) {
-        output[i].pixelData = malloc(fieldSize);
+        output[i].pixelData = (char *)malloc(fieldSize);
     }
     
     //iterating through each frame in the clip
     for (int frame = 0; frame < clipLength; frame++) {
         //load frame
         unsigned char *data = stbi_load(getFileName(frame), &imageWidth, &imageHeight, &channels, 0);
+        rowLength = imageWidth * channels;
         //iterating through image rows and cols for even field
         for(int row = 0; row < imageHeight; row += 2) {
             for(int col = 0; col < rowLength; col++) {
