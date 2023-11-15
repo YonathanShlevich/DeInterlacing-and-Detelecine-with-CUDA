@@ -6,3 +6,6 @@ Using CUDA C to deinterlace and detelecine video inputs
 
 ## Report Link
 https://docs.google.com/document/d/1PVRw0mn9TB3DNg3NLuaiCRpbYd23IxO5atWjtbL1hAs/edit
+
+## Presentation Link
+https://docs.google.com/presentation/d/1yQeUVqXXRzdCbZbFycW0VYSribESCGazfDA2ieiVCt0/edit#slide=id.g29b7661bfc0_0_1384
