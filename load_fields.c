@@ -25,28 +25,32 @@ char * getFileName(int frame) {
     return output;
 }
 
-struct video loadFields(unsigned int clipLength) {
-    //setting up output struct
-    struct video output;
-    //setup vars
-    int imageWidth, imageHeight, channels;
+struct field * loadFields(unsigned int clipLength) {
+    //checking video height, width, and channels per pixel
+    int imageHeight, imageWidth, channels, info;
+    info = stbi_info(getFileName(0), &imageWidth, &imageHeight, &channels);
+    
+    //determining the size of the output
+    size_t fieldSize = (imageHeight / 2) * imageWidth * channels * sizeof(char);
+    int rowLength = imageWidth * channels;
+
+    //setting up output
+    struct field *output = malloc(clipLength * 2 * fieldSize);
+    for(int i = 0; i < clipLength * 2; i++) {
+        output[i].pixelData = malloc(fieldSize);
+    }
 
     //iterating through each frame in the clip
     for (int frame = 0; frame < clipLength; frame++) {
-        //getting the file name for current frame
-        char *inputFile = getFileName(frame);
         //load frame
-        unsigned char *data = stbi_load(inputFile, &imageWidth, &imageHeight, &channels, 0);
-        int rowLength = imageWidth * channels;
-
+        unsigned char *data = stbi_load(getFileName(frame), &imageWidth, &imageHeight, &channels, 0);
+        //iterating through image rows and cols
         for(int row = 0; row < imageHeight; row += 2) {
             for(int col = 0; col < rowLength; col++) {
-                //output.evenFields[1][(row * rowLength) + col] = 1;
+                output[frame * 2].pixelData[((row / 2) * rowLength) + col] = data[(row * rowLength) + col];
             }
         }
-
         //free temp memory
-        free(inputFile);
         free(data);
     }
 

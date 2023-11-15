@@ -10,7 +10,7 @@ int main() {
     free(fileName);
     unsigned int clipLength = 690;
 
-    //struct video clip = loadFields(clipLength);
+    struct field * clip = loadFields(clipLength);
 
     return 0;
 }
