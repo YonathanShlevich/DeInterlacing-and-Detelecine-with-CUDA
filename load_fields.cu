@@ -31,7 +31,7 @@ size_t getFieldSize() {
     info = stbi_info(getFileName(0), &imageWidth, &imageHeight, &channels);
     
     //determining the size of the output
-    size_t fieldSize = (imageHeight / 2) * imageWidth * channels * sizeof(char);
+    size_t fieldSize = (imageHeight / 2) * imageWidth * channels * sizeof(unsigned char);
 
     return fieldSize;
 }
@@ -40,16 +40,12 @@ struct field * loadFields(unsigned int clipLength) {
     
     //checking video height, width, and channels per pixel
     int imageHeight, imageWidth, channels, rowLength;
-    
-    //determining the size of the output
-    size_t fieldSize = getFieldSize();
 
     //setting up output
-    struct field *output = (struct field *)malloc(clipLength * 2 * fieldSize);
+    struct field *output = (struct field *)malloc(clipLength * 2 * getFieldSize());
     for(int i = 0; i < clipLength * 2; i++) {
-        output[i].pixelData = (char *)malloc(fieldSize);
+        output[i].pixelData = (unsigned char *)malloc(getFieldSize());
     }
-    
     //iterating through each frame in the clip
     for (int frame = 0; frame < clipLength; frame++) {
         //load frame

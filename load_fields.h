@@ -1,5 +1,5 @@
 struct field {
-    char *pixelData; //Pixel data for each field
+    unsigned char *pixelData; //Pixel data for each field
 };
 
 //returns char array containing file name of the given frame

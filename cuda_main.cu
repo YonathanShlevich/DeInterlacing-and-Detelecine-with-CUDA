@@ -1,79 +1,85 @@
 #include <stdio.h>
 
 #include "load_fields.h"
+#include "field_reduce_kernel.cu"
 
 #define BLOCK_SIZE 512
 #define clipLength 690
 
-int main()
-{
-    // Initialize host variables ---------------------------------------------
+int main() {
+    //Loading in all frames
+    struct field * clip = loadFields(clipLength);
 
-    printf("Initializing host variables\n");
-    //Video field input to reduction algorithm
-    struct field * input_host;
-    struct field * input_device;
+    for (int i = 0; i < getFieldSize(); i++) {
+        if (clip[4].pixelData[i] != clip[6].pixelData[i]) {
+            printf("Two fields are not identical at index %d\n", i);
+        }
+    }
 
-    //Unsigned long array output from reduction algorithm
-    unsigned long * output_host;
-    unsigned long * output_device;
+    //calculating size of the output
+    unsigned int out_elements = getFieldSize() / (BLOCK_SIZE<<1);
+    if(getFieldSize() % (BLOCK_SIZE<<1)) out_elements++;
 
     cudaError_t cuda_ret;
     dim3 dim_grid, dim_block;
 
-    //initializing host input memory
-    input_host = loadFields(clipLength);
+    for (int field = 0; field < 10/*clipLength * 2*/; field++) {
+        //Initializing Host Variables --------------------------------------
+        unsigned char * input_host = (unsigned char *)malloc(getFieldSize());
+        input_host = clip[field].pixelData;
+        unsigned int * output_host = (unsigned int *)malloc(out_elements * sizeof(unsigned int));
 
-    //allocating host output memory
-    output_host = (unsigned long*)malloc(clipLength * 2 * sizeof(unsigned long));
-    if(output_host == NULL) printf("Unable to allocate host");
+        //Allocating Device Variables --------------------------------------
+        unsigned char * input_device;
+        unsigned int * output_device;
+        cuda_ret = cudaMalloc((void**)&input_device, getFieldSize());
+        if(cuda_ret != cudaSuccess) printf("Unable to allocate device memory\n");
 
-    // Allocate device variables ----------------------------------------------
+        cuda_ret = cudaMalloc((void**)&output_device, out_elements * sizeof(unsigned int));
+        if(cuda_ret != cudaSuccess) printf("Unable to allocate device memory\n");
 
-    printf("Allocating device variables\n");
-    cuda_ret = cudaMalloc((void**)&input_device, clipLength * 2 * getFieldSize());
-    if(cuda_ret != cudaSuccess) printf("Unable to allocate device memory");
+        cudaDeviceSynchronize();
 
-    cuda_ret = cudaMalloc((void**)&output_device, clipLength * 2 * sizeof(unsigned long));
-    if(cuda_ret != cudaSuccess) printf("Unable to allocate device memory");
+        //Copy Host Variables to Device -----------------------------------
+        cuda_ret = cudaMemcpy(input_device, input_host, getFieldSize(), cudaMemcpyHostToDevice);
+        if(cuda_ret != cudaSuccess) printf("Unable to copy memory to the device\n");
 
-    cudaDeviceSynchronize();
+        cuda_ret = cudaMemset(output_device, 0, out_elements * sizeof(unsigned int));
+        if(cuda_ret != cudaSuccess) printf("Unable to set device memory\n");
 
-    // Copy host variables to device ------------------------------------------
+        cudaDeviceSynchronize();
 
-    printf("Copying host variables to device\n");
-    cuda_ret = cudaMemcpy(input_device, input_host, clipLength * 2 * getFieldSize(), cudaMemcpyHostToDevice);
-    if(cuda_ret != cudaSuccess) printf("Unable to copy memory to the device");
+        //Launch Kernel ---------------------------------------------------
+        dim_block.x = BLOCK_SIZE; dim_block.y = dim_block.z = 1;
+        dim_grid.x = out_elements; dim_grid.y = dim_grid.z = 1;
+        reduction<BLOCK_SIZE><<<dim_grid, dim_block>>>(output_device, input_device, getFieldSize());
+        cuda_ret = cudaDeviceSynchronize();
+        if(cuda_ret != cudaSuccess) printf("Unable to launch/execute kernel\n");
 
-    cuda_ret = cudaMemset(output_device, 0, clipLength * 2 * sizeof(unsigned long));
-    if(cuda_ret != cudaSuccess) printf("Unable to set device memory");
+        //Copy Device Variables from Host ---------------------------------
+        cuda_ret = cudaMemcpy(output_host, output_device, out_elements * sizeof(unsigned int), cudaMemcpyDeviceToHost);
+        if(cuda_ret != cudaSuccess) printf("Unable to copy memory to host\n");
 
-    cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
 
-    // Launch kernel ----------------------------------------------------------
+        // //Accumulate Partial GPU Sums on Host  ----------------------------
+        // for(int i = 1; i < out_elements; i++) {
+        //     output_host[0] += output_host[i];
+        // }
+        // printf("GPU reduction for field %d: %u\n", field, output_host[0]);
 
-    // dim_block.x = BLOCK_SIZE; dim_block.y = dim_block.z = 1;
-    // dim_grid.x = out_elements; dim_grid.y = dim_grid.z = 1;
-    // //reduction<BLOCK_SIZE><<<dim_grid, dim_block>>>(out_d, in_d, in_elements);
-    // cuda_ret = cudaDeviceSynchronize();
-    // //fprintf(stderr,"GPUassert: %s\n", cudaGetLastError());
-    // if(cuda_ret != cudaSuccess) printf("Unable to launch/execute kernel");
+        //CPU Calculation for Verification
+        unsigned int result = 0;
+        for(int i = 0; i < getFieldSize(); i++) {
+            result += input_host[i];
+        }
+        printf("CPU reduction for field %d: %u\n", field, result);
 
-
-    // Copy device variables from host ----------------------------------------
-
-    // cuda_ret = cudaMemcpy(out_h, out_d, out_elements * sizeof(float),
-    //     cudaMemcpyDeviceToHost);
-	// if(cuda_ret != cudaSuccess) printf("Unable to copy memory to host");
-
-    // cudaDeviceSynchronize();
-
-    // Free memory ------------------------------------------------------------
-
-    printf("Freeing memory\n");
-    cudaFree(input_device); cudaFree(output_device);
-    free(input_host); free(output_host);
-
+        //Free Memory ------------------------------------------------------
+        cudaFree(input_device); 
+        cudaFree(output_device);
+        free(input_host); 
+        free(output_host);
+    }
     return 0;
 }
-

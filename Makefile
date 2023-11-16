@@ -1,5 +1,5 @@
 NVCC        = nvcc
-NVCC_FLAGS  = -O3 -I/usr/local/cuda/include
+NVCC_FLAGS  = -O3 -I/usr/local/cuda/include -diag-suppress 550
 LD_FLAGS    = -lcudart -L/usr/local/cuda/lib64
 EXE         = program
 OBJ         = cuda_main.o load_fields.o
