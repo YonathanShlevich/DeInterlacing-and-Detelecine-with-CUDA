@@ -11,7 +11,7 @@ int main() {
     struct field * clip = loadFields(clipLength);
 
     for (int i = 0; i < getFieldSize(); i++) {
-        if (clip[4].pixelData[i] != clip[6].pixelData[i]) {
+        if (clip[0].pixelData[i] != clip[2].pixelData[i]) {
             printf("Two fields are not identical at index %d\n", i);
         }
     }
